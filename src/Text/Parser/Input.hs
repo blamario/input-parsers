@@ -147,6 +147,11 @@ class (CharParsing m, InputParsing m) => InputCharParsing m where
    takeCharsWhile1 predicate = do x <- takeCharsWhile predicate
                                   if Null.null x then unexpected "takeCharsWhile1" else pure x
 
+-- | Parsers that keep track of the consumed input.
+class InputParsing m => ConsumedInputParsing m where
+   -- | Return both the result of a parse and the portion of the input that the argument parser consumed.
+   match :: m a -> m (ParserInput m, a)
+
 instance InputParsing ReadP where
    type ParserInput ReadP = String
    getInput = ReadP.look
@@ -157,6 +162,9 @@ instance InputParsing ReadP where
 
 instance InputCharParsing ReadP where
    satisfyCharInput predicate = pure <$> ReadP.satisfy predicate
+
+instance ConsumedInputParsing ReadP where
+   match = ReadP.gather
 
 #ifdef MIN_VERSION_attoparsec
 instance InputParsing Attoparsec.Parser where
@@ -177,6 +185,9 @@ instance InputCharParsing Attoparsec.Parser where
    takeCharsWhile = Attoparsec.Char8.takeWhile
    takeCharsWhile1 = Attoparsec.Char8.takeWhile1
 
+instance ConsumedInputParsing Attoparsec.Parser where
+   match = Attoparsec.match
+
 instance InputParsing Attoparsec.Text.Parser where
    type ParserInput Attoparsec.Text.Parser = Text
    getInput = lookAhead Attoparsec.Text.takeText
@@ -194,4 +205,7 @@ instance InputCharParsing Attoparsec.Text.Parser where
    scanChars = Attoparsec.Text.scan
    takeCharsWhile = Attoparsec.Text.takeWhile
    takeCharsWhile1 = Attoparsec.Text.takeWhile1
+
+instance ConsumedInputParsing Attoparsec.Text.Parser where
+   match = Attoparsec.Text.match
 #endif
