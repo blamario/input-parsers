@@ -8,6 +8,7 @@ module Text.Parser.Deterministic where
 
 import Control.Applicative (Applicative ((<*>), pure), Alternative ((<|>), many, some), liftA2, optional)
 import Control.Monad (void)
+import Control.Monad.Trans.Identity (IdentityT(..))
 import Data.Functor ((<$>))
 import qualified Data.List as List
 import Data.Monoid (Monoid, mappend, mempty)
@@ -69,6 +70,14 @@ class Parsing m => DeterministicParsing m where
 
 instance DeterministicParsing ReadP where
   (<<|>) = (ReadP.<++)
+
+instance (Monad m, DeterministicParsing m) => DeterministicParsing (IdentityT m) where
+  IdentityT p <<|> IdentityT q = IdentityT (p <<|> q)
+  takeOptional (IdentityT p) = IdentityT (takeOptional p)
+  takeMany (IdentityT p) = IdentityT (takeMany p)
+  takeSome (IdentityT p) = IdentityT (takeSome p)
+  concatAll (IdentityT p) = IdentityT (concatAll p)
+  skipAll (IdentityT p) = IdentityT (skipAll p)
 
 #ifdef MIN_VERSION_attoparsec
 instance DeterministicParsing Attoparsec.Parser where

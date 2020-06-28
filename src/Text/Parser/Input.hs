@@ -14,7 +14,8 @@ module Text.Parser.Input (InputParsing(..), InputCharParsing(..), ConsumedInputP
                           Lazy(..), Strict(..), Position) where
 
 import Control.Applicative (Applicative ((<*>), pure), Alternative ((<|>), empty))
-import Control.Monad (void)
+import Control.Monad (MonadPlus, void)
+import Control.Monad.Trans.Identity (IdentityT(..))
 import Data.Functor ((<$>))
 import qualified Data.List as List
 import Data.Monoid (Monoid, mappend, mempty)
@@ -182,6 +183,30 @@ instance InputCharParsing ReadP where
 
 instance ConsumedInputParsing ReadP where
    match = ReadP.gather
+
+instance (Monad m, InputParsing m) => InputParsing (IdentityT m) where
+   type ParserInput (IdentityT m) = ParserInput m
+   getInput = IdentityT getInput
+   getSourcePos = IdentityT getSourcePos
+   anyToken = IdentityT anyToken
+   take = IdentityT . take
+   satisfy = IdentityT . satisfy
+   notSatisfy = IdentityT . notSatisfy
+   scan state f = IdentityT (scan state f)
+   string = IdentityT . string
+   takeWhile = IdentityT . takeWhile
+   takeWhile1 = IdentityT . takeWhile1
+   concatMany (IdentityT p) = IdentityT (concatMany p)
+
+instance (MonadPlus m, InputCharParsing m) => InputCharParsing (IdentityT m) where
+   satisfyCharInput = IdentityT . satisfyCharInput
+   notSatisfyChar = IdentityT . notSatisfyChar
+   scanChars state f = IdentityT (scanChars state f)
+   takeCharsWhile = IdentityT . takeCharsWhile
+   takeCharsWhile1 = IdentityT . takeCharsWhile1
+
+instance (Monad m, ConsumedInputParsing m) => ConsumedInputParsing (IdentityT m) where
+  match (IdentityT p) = IdentityT (match p)
 
 #ifdef MIN_VERSION_attoparsec
 instance InputParsing Attoparsec.Parser where
