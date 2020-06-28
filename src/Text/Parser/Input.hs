@@ -10,9 +10,10 @@
 
 -- | Parsers that can return a prefix of their input.
 
-module Text.Parser.Input (InputParsing(..), InputCharParsing(..), ConsumedInputParsing(..), Position) where
+module Text.Parser.Input (InputParsing(..), InputCharParsing(..), ConsumedInputParsing(..),
+                          Lazy(..), Strict(..), Position) where
 
-import Control.Applicative (Applicative ((<*>), pure), Alternative ((<|>)))
+import Control.Applicative (Applicative ((<*>), pure), Alternative ((<|>), empty))
 import Control.Monad (void)
 import Data.Functor ((<$>))
 import qualified Data.List as List
@@ -22,7 +23,7 @@ import Text.ParserCombinators.ReadP (ReadP)
 import qualified Text.ParserCombinators.ReadP as ReadP
 
 import Text.Parser.Char (CharParsing)
-import Text.Parser.Combinators (count, eof, notFollowedBy, try, unexpected)
+import Text.Parser.Combinators (Parsing, count, eof, notFollowedBy, try, unexpected)
 import Text.Parser.LookAhead (LookAheadParsing, lookAhead)
 import qualified Text.Parser.Char as Char
 
@@ -39,6 +40,7 @@ import Data.ByteString (ByteString)
 import Data.Text (Text)
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Char8 as ByteString.Char8
+import qualified Data.ByteString.Lazy as Lazy
 import qualified Data.Text as Text
 
 import qualified Data.Attoparsec.ByteString as Attoparsec
@@ -46,7 +48,12 @@ import qualified Data.Attoparsec.ByteString.Char8 as Attoparsec.Char8
 import qualified Data.Attoparsec.Text as Attoparsec.Text
 #endif
 
-import Text.Parser.Input.Position (Position, fromEnd)
+#ifdef MIN_VERSION_binary
+import qualified Data.Binary.Get as Binary
+#endif
+
+import Text.Parser.Input.Position (Position, fromEnd, fromStart)
+import Text.Parser.Wrapper (Lazy(..), Strict(..))
 
 import Prelude hiding (take, takeWhile)
 
@@ -97,6 +104,8 @@ class LookAheadParsing m => InputParsing m where
    default getSourcePos :: (FactorialMonoid (ParserInput m), Functor m) => m Position
    getSourcePos = fromEnd . Factorial.length <$> getInput
    anyToken = take 1
+   default satisfy :: Monad m => (ParserInput m -> Bool) -> m (ParserInput m)
+   satisfy predicate = anyToken >>= \x-> if predicate x then pure x else empty
    notSatisfy predicate = try (void $ satisfy $ not . predicate) <|> eof
    concatMany p = go
       where go = mappend <$> try p <*> go <|> pure mempty
@@ -216,4 +225,34 @@ instance InputCharParsing Attoparsec.Text.Parser where
 
 instance ConsumedInputParsing Attoparsec.Text.Parser where
    match = Attoparsec.Text.match
+#endif
+
+#ifdef MIN_VERSION_binary
+instance InputParsing (Lazy Binary.Get) where
+   type ParserInput (Lazy Binary.Get) = Lazy.ByteString
+   getInput = Lazy (Binary.lookAhead Binary.getRemainingLazyByteString)
+   getSourcePos = Lazy (fromStart . fromIntegral <$> Binary.bytesRead)
+   anyToken = Lazy (Binary.getLazyByteString 1)
+   take n = Lazy (Binary.getLazyByteString $ fromIntegral n) <|> getInput
+
+instance InputParsing (Strict Binary.Get) where
+   type ParserInput (Strict Binary.Get) = ByteString
+   getInput = Strict (Lazy.toStrict <$> Binary.lookAhead Binary.getRemainingLazyByteString)
+   getSourcePos = Strict (fromStart . fromIntegral <$> Binary.bytesRead)
+   anyToken = Strict (Binary.getByteString 1)
+   take n = Strict (Binary.getByteString n) <|> getInput
+
+instance ConsumedInputParsing (Lazy Binary.Get) where
+  match (Lazy p) = Lazy $ do input <- Binary.lookAhead Binary.getRemainingLazyByteString
+                             pos <- Binary.bytesRead
+                             result <- p
+                             pos' <- Binary.bytesRead
+                             pure (Lazy.take (pos' - pos) input, result)
+
+instance ConsumedInputParsing (Strict Binary.Get) where
+  match (Strict p) = Strict $ do input <- Binary.lookAhead Binary.getRemainingLazyByteString
+                                 pos <- Binary.bytesRead
+                                 result <- p
+                                 pos' <- Binary.bytesRead
+                                 pure (Lazy.toStrict (Lazy.take (pos' - pos) input), result)
 #endif

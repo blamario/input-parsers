@@ -20,6 +20,8 @@ import Text.Parser.Combinators (Parsing, count, eof, notFollowedBy, try, unexpec
 import Text.Parser.LookAhead (LookAheadParsing, lookAhead)
 import qualified Text.Parser.Char as Char
 
+import Text.Parser.Wrapper (Lazy(..), Strict(..))
+
 #ifdef MIN_VERSION_attoparsec
 import Data.ByteString (ByteString)
 import Data.Text (Text)
@@ -30,6 +32,14 @@ import qualified Data.Text as Text
 import qualified Data.Attoparsec.ByteString as Attoparsec
 import qualified Data.Attoparsec.ByteString.Char8 as Attoparsec.Char8
 import qualified Data.Attoparsec.Text as Attoparsec.Text
+#endif
+
+#ifdef MIN_VERSION_binary
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Lazy as Lazy
+
+import qualified Data.Binary.Get as Binary
 #endif
 
 -- | Combinator methods for constructing deterministic parsers, /i.e./, parsers that can succeed with only a single
@@ -74,4 +84,18 @@ instance DeterministicParsing Attoparsec.Text.Parser where
   takeMany = many
   takeSome = some
   skipAll = Attoparsec.Text.skipMany
+#endif
+
+#ifdef MIN_VERSION_binary
+instance DeterministicParsing (Lazy Binary.Get) where
+  (<<|>) = (<|>)
+  takeOptional = optional
+  takeMany = many
+  takeSome = some
+
+instance DeterministicParsing (Strict Binary.Get) where
+  (<<|>) = (<|>)
+  takeOptional = optional
+  takeMany = many
+  takeSome = some
 #endif
