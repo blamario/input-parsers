@@ -15,7 +15,11 @@ module Text.Parser.Input (InputParsing(..), InputCharParsing(..), ConsumedInputP
 
 import Control.Applicative (Applicative ((<*>), pure), Alternative ((<|>), empty))
 import Control.Monad (MonadPlus, void)
+import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Identity (IdentityT(..))
+import Control.Monad.Trans.Reader (ReaderT(..), mapReaderT)
+import qualified Control.Monad.Trans.Writer.Lazy as Lazy
+import qualified Control.Monad.Trans.Writer.Strict as Strict
 import Data.Functor ((<$>))
 import qualified Data.List as List
 import Data.Monoid (Monoid, mappend, mempty)
@@ -54,6 +58,7 @@ import qualified Data.Binary.Get as Binary
 #endif
 
 import Text.Parser.Input.Position (Position, fromEnd, fromStart)
+import Text.Parser.Internal (mapLazyWriterT, mapStrictWriterT)
 import Text.Parser.Wrapper (Lazy(..), Strict(..))
 
 import Prelude hiding (take, takeWhile)
@@ -207,6 +212,78 @@ instance (MonadPlus m, InputCharParsing m) => InputCharParsing (IdentityT m) whe
 
 instance (Monad m, ConsumedInputParsing m) => ConsumedInputParsing (IdentityT m) where
   match (IdentityT p) = IdentityT (match p)
+
+instance (MonadPlus m, InputParsing m) => InputParsing (ReaderT e m) where
+   type ParserInput (ReaderT e m) = ParserInput m
+   getInput = lift getInput
+   getSourcePos = lift getSourcePos
+   anyToken = lift anyToken
+   take = lift . take
+   satisfy = lift . satisfy
+   notSatisfy = lift . notSatisfy
+   scan state f = lift (scan state f)
+   string = lift . string
+   takeWhile = lift . takeWhile
+   takeWhile1 = lift . takeWhile1
+   concatMany = mapReaderT concatMany
+
+instance (MonadPlus m, InputCharParsing m) => InputCharParsing (ReaderT e m) where
+   satisfyCharInput = lift . satisfyCharInput
+   notSatisfyChar = lift . notSatisfyChar
+   scanChars state f = lift (scanChars state f)
+   takeCharsWhile = lift . takeCharsWhile
+   takeCharsWhile1 = lift . takeCharsWhile1
+
+instance (MonadPlus m, ConsumedInputParsing m) => ConsumedInputParsing (ReaderT e m) where
+  match = mapReaderT match
+
+instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Lazy.WriterT w m) where
+   type ParserInput (Lazy.WriterT w m) = ParserInput m
+   getInput = lift getInput
+   getSourcePos = lift getSourcePos
+   anyToken = lift anyToken
+   take = lift . take
+   satisfy = lift . satisfy
+   notSatisfy = lift . notSatisfy
+   scan state f = lift (scan state f)
+   string = lift . string
+   takeWhile = lift . takeWhile
+   takeWhile1 = lift . takeWhile1
+   concatMany = mapLazyWriterT concatMany
+
+instance (MonadPlus m, InputCharParsing m, Monoid w) => InputCharParsing (Lazy.WriterT w m) where
+   satisfyCharInput = lift . satisfyCharInput
+   notSatisfyChar = lift . notSatisfyChar
+   scanChars state f = lift (scanChars state f)
+   takeCharsWhile = lift . takeCharsWhile
+   takeCharsWhile1 = lift . takeCharsWhile1
+
+instance (MonadPlus m, ConsumedInputParsing m, Monoid w) => ConsumedInputParsing (Lazy.WriterT w m) where
+  match = mapLazyWriterT match
+
+instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Strict.WriterT w m) where
+   type ParserInput (Strict.WriterT w m) = ParserInput m
+   getInput = lift getInput
+   getSourcePos = lift getSourcePos
+   anyToken = lift anyToken
+   take = lift . take
+   satisfy = lift . satisfy
+   notSatisfy = lift . notSatisfy
+   scan state f = lift (scan state f)
+   string = lift . string
+   takeWhile = lift . takeWhile
+   takeWhile1 = lift . takeWhile1
+   concatMany = mapStrictWriterT concatMany
+
+instance (MonadPlus m, InputCharParsing m, Monoid w) => InputCharParsing (Strict.WriterT w m) where
+   satisfyCharInput = lift . satisfyCharInput
+   notSatisfyChar = lift . notSatisfyChar
+   scanChars state f = lift (scanChars state f)
+   takeCharsWhile = lift . takeCharsWhile
+   takeCharsWhile1 = lift . takeCharsWhile1
+
+instance (MonadPlus m, ConsumedInputParsing m, Monoid w) => ConsumedInputParsing (Strict.WriterT w m) where
+  match = mapStrictWriterT match
 
 #ifdef MIN_VERSION_attoparsec
 instance InputParsing Attoparsec.Parser where

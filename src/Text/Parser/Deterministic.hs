@@ -7,8 +7,12 @@
 module Text.Parser.Deterministic where
 
 import Control.Applicative (Applicative ((<*>), pure), Alternative ((<|>), many, some), liftA2, optional)
-import Control.Monad (void)
+import Control.Arrow (first)
+import Control.Monad (MonadPlus, void)
 import Control.Monad.Trans.Identity (IdentityT(..))
+import Control.Monad.Trans.Reader (ReaderT(..), mapReaderT)
+import qualified Control.Monad.Trans.Writer.Lazy as Lazy
+import qualified Control.Monad.Trans.Writer.Strict as Strict
 import Data.Functor ((<$>))
 import qualified Data.List as List
 import Data.Monoid (Monoid, mappend, mempty)
@@ -21,6 +25,7 @@ import Text.Parser.Combinators (Parsing, count, eof, notFollowedBy, try, unexpec
 import Text.Parser.LookAhead (LookAheadParsing, lookAhead)
 import qualified Text.Parser.Char as Char
 
+import Text.Parser.Internal (mapLazyWriterT, mapStrictWriterT)
 import Text.Parser.Wrapper (Lazy(..), Strict(..))
 
 #ifdef MIN_VERSION_attoparsec
@@ -78,6 +83,30 @@ instance (Monad m, DeterministicParsing m) => DeterministicParsing (IdentityT m)
   takeSome (IdentityT p) = IdentityT (takeSome p)
   concatAll (IdentityT p) = IdentityT (concatAll p)
   skipAll (IdentityT p) = IdentityT (skipAll p)
+
+instance (MonadPlus m, DeterministicParsing m) => DeterministicParsing (ReaderT e m) where
+  ReaderT p <<|> ReaderT q = ReaderT (\a-> p a <<|> q a)
+  takeOptional = mapReaderT takeOptional
+  takeMany = mapReaderT takeMany
+  takeSome = mapReaderT takeSome
+  concatAll = mapReaderT concatAll
+  skipAll = mapReaderT skipAll
+
+instance (MonadPlus m, DeterministicParsing m, Monoid w) => DeterministicParsing (Lazy.WriterT w m) where
+  Lazy.WriterT p <<|> Lazy.WriterT q = Lazy.WriterT (p <<|> q)
+  takeOptional = mapLazyWriterT takeOptional
+  takeMany = mapLazyWriterT takeMany
+  takeSome = mapLazyWriterT takeSome
+  concatAll = mapLazyWriterT concatAll
+  skipAll = mapLazyWriterT skipAll
+
+instance (MonadPlus m, DeterministicParsing m, Monoid w) => DeterministicParsing (Strict.WriterT w m) where
+  Strict.WriterT p <<|> Strict.WriterT q = Strict.WriterT (p <<|> q)
+  takeOptional = mapStrictWriterT takeOptional
+  takeMany = mapStrictWriterT takeMany
+  takeSome = mapStrictWriterT takeSome
+  concatAll = mapStrictWriterT concatAll
+  skipAll = mapStrictWriterT skipAll
 
 #ifdef MIN_VERSION_attoparsec
 instance DeterministicParsing Attoparsec.Parser where
