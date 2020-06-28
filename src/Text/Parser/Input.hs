@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 #endif
 
-module Text.Parser.Input where
+module Text.Parser.Input (InputParsing(..), InputCharParsing(..), ConsumedInputParsing(..), Position) where
 
 import Control.Applicative (Applicative ((<*>), pure), Alternative ((<|>)))
 import Control.Monad (void)
@@ -44,6 +44,8 @@ import qualified Data.Attoparsec.ByteString.Char8 as Attoparsec.Char8
 import qualified Data.Attoparsec.Text as Attoparsec.Text
 #endif
 
+import Text.Parser.Input.Position (Position, fromEnd)
+
 import Prelude hiding (take, takeWhile)
 
 -- | Methods for parsing monoidal inputs
@@ -51,6 +53,8 @@ class LookAheadParsing m => InputParsing m where
    type ParserInput m
    -- | Always sucessful parser that returns the remaining input without consuming it.
    getInput :: m (ParserInput m)
+   -- | Retrieve the 'Position' the parser has reached in the input source.
+   getSourcePos :: m Position
 
    -- | A parser that accepts any single atomic prefix of the input stream.
    -- > anyToken == satisfy (const True)
@@ -88,6 +92,8 @@ class LookAheadParsing m => InputParsing m where
    -- | Zero or more argument occurrences like 'many', with concatenated monoidal results.
    concatMany :: Monoid a => m a -> m a
 
+   default getSourcePos :: (FactorialMonoid (ParserInput m), Functor m) => m Position
+   getSourcePos = fromEnd . Factorial.length <$> getInput
    anyToken = take 1
    notSatisfy predicate = try (void $ satisfy $ not . predicate) <|> eof
    concatMany p = go
