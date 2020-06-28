@@ -2,6 +2,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
+-- | Deterministic parsers can be restricted to a single parsing result.
+
 module Text.Parser.Deterministic where
 
 import Control.Applicative (Applicative ((<*>), pure), Alternative ((<|>), many, some), liftA2, optional)
@@ -42,9 +44,9 @@ class Parsing m => DeterministicParsing m where
    takeMany :: m a -> m [a]
    -- | Like 'some', but always consuming the longest matching sequence of input.
    takeSome :: m a -> m [a]
-   -- | Like 'concatMany', but always consuming the longest matching sequence of input.
+   -- | Like 'Text.Parser.Input.concatMany', but always consuming the longest matching sequence of input.
    concatAll :: Monoid a => m a -> m a
-   -- | Like 'skipMany', but always consuming the longest matching sequence of input.
+   -- | Like 'Text.Parser.Combinators.skipMany', but always consuming the longest matching sequence of input.
    skipAll :: m a -> m ()
 
    p <<|> q = try p <|> notFollowedBy (void p) *> q

@@ -8,6 +8,8 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 #endif
 
+-- | Parsers that can return a prefix of their input.
+
 module Text.Parser.Input (InputParsing(..), InputCharParsing(..), ConsumedInputParsing(..), Position) where
 
 import Control.Applicative (Applicative ((<*>), pure), Alternative ((<|>)))
@@ -74,22 +76,22 @@ class LookAheadParsing m => InputParsing m where
    -- This parser does not fail.  It will return an empty string if the predicate returns 'Nothing' on the first
    -- character.
    --
-   -- /Note/: Because this parser does not fail, do not use it with combinators such as 'many', because such parsers
-   -- loop until a failure occurs.  Careless use will thus result in an infinite loop.
+   -- /Note/: Because this parser does not fail, do not use it with combinators such as 'Control.Applicative.many',
+   -- because such parsers loop until a failure occurs.  Careless use will thus result in an infinite loop.
    scan :: state -> (state -> ParserInput m -> Maybe state) -> m (ParserInput m)
    -- | A parser that consumes and returns the given prefix of the input.
    string :: ParserInput m -> m (ParserInput m)
 
    -- | A parser accepting the longest sequence of input atoms that match the given predicate; an optimized version of
-   -- 'concatMany . satisfy'.
+   -- 'concatMany' . 'satisfy'.
    --
-   -- /Note/: Because this parser does not fail, do not use it with combinators such as 'many', because such parsers
-   -- loop until a failure occurs.  Careless use will thus result in an infinite loop.
+   -- /Note/: Because this parser does not fail, do not use it with combinators such as 'Control.Applicative.many',
+   -- because such parsers loop until a failure occurs.  Careless use will thus result in an infinite loop.
    takeWhile :: (ParserInput m -> Bool) -> m (ParserInput m)
    -- | A parser accepting the longest non-empty sequence of input atoms that match the given predicate; an optimized
    -- version of 'concatSome . satisfy'.
    takeWhile1 :: (ParserInput m -> Bool) -> m (ParserInput m)
-   -- | Zero or more argument occurrences like 'many', with concatenated monoidal results.
+   -- | Zero or more argument occurrences like 'Control.Applicative.many', with concatenated monoidal results.
    concatMany :: Monoid a => m a -> m a
 
    default getSourcePos :: (FactorialMonoid (ParserInput m), Functor m) => m Position
@@ -133,8 +135,8 @@ class (CharParsing m, InputParsing m) => InputCharParsing m where
    -- | Specialization of 'takeWhile' on 'TextualMonoid' inputs, accepting the longest sequence of input characters that
    -- match the given predicate; an optimized version of @fmap fromString  . many . Char.satisfy@.
    --
-   -- /Note/: Because this parser does not fail, do not use it with combinators such as 'many', because such parsers
-   -- loop until a failure occurs.  Careless use will thus result in an infinite loop.
+   -- /Note/: Because this parser does not fail, do not use it with combinators such as 'Control.Applicative.many',
+   -- because such parsers loop until a failure occurs.  Careless use will thus result in an infinite loop.
    takeCharsWhile :: (Char -> Bool) -> m (ParserInput m)
    -- | Specialization of 'takeWhile1' on 'TextualMonoid' inputs, accepting the longest sequence of input characters
    -- that match the given predicate; an optimized version of @fmap fromString  . some . Char.satisfy@.

@@ -1,4 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
+
+-- | A parser's position in the input.
+
 module Text.Parser.Input.Position (Position, fromStart, fromEnd,
                                    offset, context, lineAndColumn) where
 
@@ -25,6 +28,8 @@ fromEnd :: Int -> Position
 fromEnd = PositionFromEnd
 
 -- | Map the position into its offset from the beginning of the full input.
+--
+-- > offset input . fromStart === id
 offset :: FactorialMonoid s => s -> Position -> Int
 offset wholeInput (PositionFromStart offset) = offset
 offset wholeInput (PositionFromEnd remainderLength) = Factorial.length wholeInput - remainderLength
