@@ -11,8 +11,10 @@ import Control.Arrow (first)
 import Control.Monad (MonadPlus, void)
 import Control.Monad.Trans.Identity (IdentityT(..))
 import Control.Monad.Trans.Reader (ReaderT(..), mapReaderT)
-import qualified Control.Monad.Trans.Writer.Lazy as Lazy
-import qualified Control.Monad.Trans.Writer.Strict as Strict
+import qualified Control.Monad.Trans.Writer.Lazy as Lazy (WriterT(WriterT))
+import qualified Control.Monad.Trans.Writer.Strict as Strict (WriterT(WriterT))
+import qualified Control.Monad.Trans.State.Lazy as Lazy (StateT(StateT))
+import qualified Control.Monad.Trans.State.Strict as Strict (StateT(StateT))
 import Data.Functor ((<$>))
 import qualified Data.List as List
 import Data.Monoid (Monoid, mappend, mempty)
@@ -25,7 +27,7 @@ import Text.Parser.Combinators (Parsing, count, eof, notFollowedBy, try, unexpec
 import Text.Parser.LookAhead (LookAheadParsing, lookAhead)
 import qualified Text.Parser.Char as Char
 
-import Text.Parser.Internal (mapLazyWriterT, mapStrictWriterT)
+import Text.Parser.Internal (mapLazyWriterT, mapStrictWriterT, mapLazyStateT, mapStrictStateT)
 import Text.Parser.Wrapper (Lazy(..), Strict(..))
 
 #ifdef MIN_VERSION_attoparsec
@@ -107,6 +109,22 @@ instance (MonadPlus m, DeterministicParsing m, Monoid w) => DeterministicParsing
   takeSome = mapStrictWriterT takeSome
   concatAll = mapStrictWriterT concatAll
   skipAll = mapStrictWriterT skipAll
+
+instance (MonadPlus m, DeterministicParsing m, Monoid w) => DeterministicParsing (Lazy.StateT w m) where
+  Lazy.StateT p <<|> Lazy.StateT q = Lazy.StateT (\a-> p a <<|> q a)
+  takeOptional = mapLazyStateT takeOptional
+  takeMany = mapLazyStateT takeMany
+  takeSome = mapLazyStateT takeSome
+  concatAll = mapLazyStateT concatAll
+  skipAll = mapLazyStateT skipAll
+
+instance (MonadPlus m, DeterministicParsing m, Monoid w) => DeterministicParsing (Strict.StateT w m) where
+  Strict.StateT p <<|> Strict.StateT q = Strict.StateT (\a-> p a <<|> q a)
+  takeOptional = mapStrictStateT takeOptional
+  takeMany = mapStrictStateT takeMany
+  takeSome = mapStrictStateT takeSome
+  concatAll = mapStrictStateT concatAll
+  skipAll = mapStrictStateT skipAll
 
 #ifdef MIN_VERSION_attoparsec
 instance DeterministicParsing Attoparsec.Parser where
