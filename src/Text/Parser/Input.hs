@@ -22,6 +22,8 @@ import qualified Control.Monad.Trans.Writer.Lazy as Lazy (WriterT(WriterT))
 import qualified Control.Monad.Trans.Writer.Strict as Strict (WriterT(WriterT))
 import qualified Control.Monad.Trans.State.Lazy as Lazy (StateT(StateT))
 import qualified Control.Monad.Trans.State.Strict as Strict (StateT(StateT))
+import qualified Control.Monad.Trans.RWS.Lazy as Lazy (RWST(RWST))
+import qualified Control.Monad.Trans.RWS.Strict as Strict (RWST(RWST))
 import Data.Functor ((<$>))
 import qualified Data.List as List
 import Data.Monoid (Monoid, mappend, mempty)
@@ -60,7 +62,9 @@ import qualified Data.Binary.Get as Binary
 #endif
 
 import Text.Parser.Input.Position (Position, fromEnd, fromStart)
-import Text.Parser.Internal (mapLazyWriterT, mapStrictWriterT, mapLazyStateT, mapStrictStateT)
+import Text.Parser.Internal (mapLazyWriterT, mapStrictWriterT,
+                             mapLazyStateT, mapStrictStateT,
+                             mapLazyRWST, mapStrictRWST)
 import Text.Parser.Wrapper (Lazy(..), Strict(..))
 
 import Prelude hiding (take, takeWhile)
@@ -287,8 +291,8 @@ instance (MonadPlus m, InputCharParsing m, Monoid w) => InputCharParsing (Strict
 instance (MonadPlus m, ConsumedInputParsing m, Monoid w) => ConsumedInputParsing (Strict.WriterT w m) where
   match = mapStrictWriterT match
 
-instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Lazy.StateT w m) where
-   type ParserInput (Lazy.StateT w m) = ParserInput m
+instance (MonadPlus m, InputParsing m) => InputParsing (Lazy.StateT s m) where
+   type ParserInput (Lazy.StateT s m) = ParserInput m
    getInput = lift getInput
    getSourcePos = lift getSourcePos
    anyToken = lift anyToken
@@ -301,18 +305,18 @@ instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Lazy.StateT w 
    takeWhile1 = lift . takeWhile1
    concatMany = mapLazyStateT concatMany
 
-instance (MonadPlus m, InputCharParsing m, Monoid w) => InputCharParsing (Lazy.StateT w m) where
+instance (MonadPlus m, InputCharParsing m) => InputCharParsing (Lazy.StateT s m) where
    satisfyCharInput = lift . satisfyCharInput
    notSatisfyChar = lift . notSatisfyChar
    scanChars state f = lift (scanChars state f)
    takeCharsWhile = lift . takeCharsWhile
    takeCharsWhile1 = lift . takeCharsWhile1
 
-instance (MonadPlus m, ConsumedInputParsing m, Monoid w) => ConsumedInputParsing (Lazy.StateT w m) where
+instance (MonadPlus m, ConsumedInputParsing m) => ConsumedInputParsing (Lazy.StateT s m) where
   match = mapLazyStateT match
 
-instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Strict.StateT w m) where
-   type ParserInput (Strict.StateT w m) = ParserInput m
+instance (MonadPlus m, InputParsing m) => InputParsing (Strict.StateT s m) where
+   type ParserInput (Strict.StateT s m) = ParserInput m
    getInput = lift getInput
    getSourcePos = lift getSourcePos
    anyToken = lift anyToken
@@ -325,15 +329,63 @@ instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Strict.StateT 
    takeWhile1 = lift . takeWhile1
    concatMany = mapStrictStateT concatMany
 
-instance (MonadPlus m, InputCharParsing m, Monoid w) => InputCharParsing (Strict.StateT w m) where
+instance (MonadPlus m, InputCharParsing m) => InputCharParsing (Strict.StateT s m) where
    satisfyCharInput = lift . satisfyCharInput
    notSatisfyChar = lift . notSatisfyChar
    scanChars state f = lift (scanChars state f)
    takeCharsWhile = lift . takeCharsWhile
    takeCharsWhile1 = lift . takeCharsWhile1
 
-instance (MonadPlus m, ConsumedInputParsing m, Monoid w) => ConsumedInputParsing (Strict.StateT w m) where
+instance (MonadPlus m, ConsumedInputParsing m) => ConsumedInputParsing (Strict.StateT s m) where
   match = mapStrictStateT match
+
+instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Lazy.RWST r w s m) where
+   type ParserInput (Lazy.RWST r w s m) = ParserInput m
+   getInput = lift getInput
+   getSourcePos = lift getSourcePos
+   anyToken = lift anyToken
+   take = lift . take
+   satisfy = lift . satisfy
+   notSatisfy = lift . notSatisfy
+   scan state f = lift (scan state f)
+   string = lift . string
+   takeWhile = lift . takeWhile
+   takeWhile1 = lift . takeWhile1
+   concatMany = mapLazyRWST concatMany
+
+instance (MonadPlus m, InputCharParsing m, Monoid w) => InputCharParsing (Lazy.RWST r w s m) where
+   satisfyCharInput = lift . satisfyCharInput
+   notSatisfyChar = lift . notSatisfyChar
+   scanChars state f = lift (scanChars state f)
+   takeCharsWhile = lift . takeCharsWhile
+   takeCharsWhile1 = lift . takeCharsWhile1
+
+instance (MonadPlus m, ConsumedInputParsing m, Monoid w) => ConsumedInputParsing (Lazy.RWST r w s m) where
+  match = mapLazyRWST match
+
+instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Strict.RWST r w s m) where
+   type ParserInput (Strict.RWST r w s m) = ParserInput m
+   getInput = lift getInput
+   getSourcePos = lift getSourcePos
+   anyToken = lift anyToken
+   take = lift . take
+   satisfy = lift . satisfy
+   notSatisfy = lift . notSatisfy
+   scan state f = lift (scan state f)
+   string = lift . string
+   takeWhile = lift . takeWhile
+   takeWhile1 = lift . takeWhile1
+   concatMany = mapStrictRWST concatMany
+
+instance (MonadPlus m, InputCharParsing m, Monoid w) => InputCharParsing (Strict.RWST r w s m) where
+   satisfyCharInput = lift . satisfyCharInput
+   notSatisfyChar = lift . notSatisfyChar
+   scanChars state f = lift (scanChars state f)
+   takeCharsWhile = lift . takeCharsWhile
+   takeCharsWhile1 = lift . takeCharsWhile1
+
+instance (MonadPlus m, ConsumedInputParsing m, Monoid w) => ConsumedInputParsing (Strict.RWST r w s m) where
+  match = mapStrictRWST match
 
 #ifdef MIN_VERSION_attoparsec
 instance InputParsing Attoparsec.Parser where
