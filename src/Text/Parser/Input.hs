@@ -82,6 +82,7 @@ class LookAheadParsing m => InputParsing m where
    -- > anyToken == take 1
    anyToken :: m (ParserInput m)
    -- | A parser that accepts exactly the given number of input atoms.
+   -- > take n == count n anyToken
    take :: Int -> m (ParserInput m)
    -- | A parser that accepts an input atom only if it satisfies the given predicate.
    satisfy :: (ParserInput m -> Bool) -> m (ParserInput m)
@@ -424,14 +425,14 @@ instance InputParsing (Lazy Binary.Get) where
    getInput = Lazy (Binary.lookAhead Binary.getRemainingLazyByteString)
    getSourcePos = Lazy (fromStart . fromIntegral <$> Binary.bytesRead)
    anyToken = Lazy (Binary.getLazyByteString 1)
-   take n = Lazy (Binary.getLazyByteString $ fromIntegral n) <|> getInput
+   take n = Lazy (Binary.getLazyByteString $ fromIntegral n)
 
 instance InputParsing (Strict Binary.Get) where
    type ParserInput (Strict Binary.Get) = ByteString
    getInput = Strict (Lazy.toStrict <$> Binary.lookAhead Binary.getRemainingLazyByteString)
    getSourcePos = Strict (fromStart . fromIntegral <$> Binary.bytesRead)
    anyToken = Strict (Binary.getByteString 1)
-   take n = Strict (Binary.getByteString n) <|> getInput
+   take n = Strict (Binary.getByteString n)
 
 instance ConsumedInputParsing (Lazy Binary.Get) where
   match (Lazy p) = Lazy $ do input <- Binary.lookAhead Binary.getRemainingLazyByteString
