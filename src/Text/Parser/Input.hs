@@ -13,7 +13,7 @@
 module Text.Parser.Input (InputParsing(..), InputCharParsing(..), ConsumedInputParsing(..),
                           Lazy(..), Strict(..), Position) where
 
-import Control.Applicative (Applicative ((<*>), pure), Alternative ((<|>), empty))
+import Control.Applicative (Applicative ((<*>), pure), Alternative ((<|>), empty), (<**>))
 import Control.Monad (MonadPlus, void)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Identity (IdentityT(..))
@@ -102,7 +102,7 @@ class LookAheadParsing m => InputParsing m where
    string :: ParserInput m -> m (ParserInput m)
 
    -- | A parser accepting the longest sequence of input atoms that match the given predicate; an optimized version of
-   -- 'concatMany' . 'satisfy'.
+   -- 'concat' . 'many' . 'satisfy'.
    --
    -- /Note/: Because this parser does not fail, do not use it with combinators such as 'Control.Applicative.many',
    -- because such parsers loop until a failure occurs.  Careless use will thus result in an infinite loop.
@@ -110,8 +110,6 @@ class LookAheadParsing m => InputParsing m where
    -- | A parser accepting the longest non-empty sequence of input atoms that match the given predicate; an optimized
    -- version of 'concatSome . satisfy'.
    takeWhile1 :: (ParserInput m -> Bool) -> m (ParserInput m)
-   -- | Zero or more argument occurrences like 'Control.Applicative.many', with concatenated monoidal results.
-   concatMany :: Monoid a => m a -> m a
 
    default getSourcePos :: (FactorialMonoid (ParserInput m), Functor m) => m Position
    getSourcePos = fromEnd . Factorial.length <$> getInput
@@ -119,8 +117,6 @@ class LookAheadParsing m => InputParsing m where
    default satisfy :: Monad m => (ParserInput m -> Bool) -> m (ParserInput m)
    satisfy predicate = anyToken >>= \x-> if predicate x then pure x else empty
    notSatisfy predicate = try (void $ satisfy $ not . predicate) <|> eof
-   concatMany p = go
-      where go = mappend <$> try p <*> go <|> pure mempty
    default string :: (Monad m, LeftReductive (ParserInput m), FactorialMonoid (ParserInput m), Show (ParserInput m))
                   => ParserInput m -> m (ParserInput m)
    string s = do i <- getInput
@@ -138,7 +134,6 @@ class LookAheadParsing m => InputParsing m where
    default takeWhile1 :: (Monad m, FactorialMonoid (ParserInput m)) => (ParserInput m -> Bool) -> m (ParserInput m)
    takeWhile1 predicate = do x <- takeWhile predicate
                              if Null.null x then unexpected "takeWhile1" else pure x
-   {-# INLINE concatMany #-}
 
 
 -- | Methods for parsing textual monoid inputs
@@ -207,7 +202,6 @@ instance (Monad m, InputParsing m) => InputParsing (IdentityT m) where
    string = IdentityT . string
    takeWhile = IdentityT . takeWhile
    takeWhile1 = IdentityT . takeWhile1
-   concatMany (IdentityT p) = IdentityT (concatMany p)
 
 instance (MonadPlus m, InputCharParsing m) => InputCharParsing (IdentityT m) where
    satisfyCharInput = IdentityT . satisfyCharInput
@@ -231,7 +225,6 @@ instance (MonadPlus m, InputParsing m) => InputParsing (ReaderT e m) where
    string = lift . string
    takeWhile = lift . takeWhile
    takeWhile1 = lift . takeWhile1
-   concatMany = mapReaderT concatMany
 
 instance (MonadPlus m, InputCharParsing m) => InputCharParsing (ReaderT e m) where
    satisfyCharInput = lift . satisfyCharInput
@@ -255,7 +248,6 @@ instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Lazy.WriterT w
    string = lift . string
    takeWhile = lift . takeWhile
    takeWhile1 = lift . takeWhile1
-   concatMany = mapLazyWriterT concatMany
 
 instance (MonadPlus m, InputCharParsing m, Monoid w) => InputCharParsing (Lazy.WriterT w m) where
    satisfyCharInput = lift . satisfyCharInput
@@ -279,7 +271,6 @@ instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Strict.WriterT
    string = lift . string
    takeWhile = lift . takeWhile
    takeWhile1 = lift . takeWhile1
-   concatMany = mapStrictWriterT concatMany
 
 instance (MonadPlus m, InputCharParsing m, Monoid w) => InputCharParsing (Strict.WriterT w m) where
    satisfyCharInput = lift . satisfyCharInput
@@ -303,7 +294,6 @@ instance (MonadPlus m, InputParsing m) => InputParsing (Lazy.StateT s m) where
    string = lift . string
    takeWhile = lift . takeWhile
    takeWhile1 = lift . takeWhile1
-   concatMany = mapLazyStateT concatMany
 
 instance (MonadPlus m, InputCharParsing m) => InputCharParsing (Lazy.StateT s m) where
    satisfyCharInput = lift . satisfyCharInput
@@ -327,7 +317,6 @@ instance (MonadPlus m, InputParsing m) => InputParsing (Strict.StateT s m) where
    string = lift . string
    takeWhile = lift . takeWhile
    takeWhile1 = lift . takeWhile1
-   concatMany = mapStrictStateT concatMany
 
 instance (MonadPlus m, InputCharParsing m) => InputCharParsing (Strict.StateT s m) where
    satisfyCharInput = lift . satisfyCharInput
@@ -351,7 +340,6 @@ instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Lazy.RWST r w 
    string = lift . string
    takeWhile = lift . takeWhile
    takeWhile1 = lift . takeWhile1
-   concatMany = mapLazyRWST concatMany
 
 instance (MonadPlus m, InputCharParsing m, Monoid w) => InputCharParsing (Lazy.RWST r w s m) where
    satisfyCharInput = lift . satisfyCharInput
@@ -375,7 +363,6 @@ instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Strict.RWST r 
    string = lift . string
    takeWhile = lift . takeWhile
    takeWhile1 = lift . takeWhile1
-   concatMany = mapStrictRWST concatMany
 
 instance (MonadPlus m, InputCharParsing m, Monoid w) => InputCharParsing (Strict.RWST r w s m) where
    satisfyCharInput = lift . satisfyCharInput
