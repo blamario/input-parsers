@@ -16,7 +16,7 @@ this failing and enable more efficient parsers to be expressed, the present pack
 [InputParsing](http://hackage.haskell.org/package/input-parsers/docs/Text-Parser-Input.html#t:InputParsing) and
 [InputCharParsing](http://hackage.haskell.org/package/input-parsers/docs/Text-Parser-Input.html#t:InputCharParsing). The
 common characteristic of almost all their methods is that their parse result has the same type as the parser input,
-and is always a prefix of the input.
+and is a prefix of the input.
 
 The present package also exports the class
 [DeterministicParsing](http://hackage.haskell.org/package/input-parsers/docs/Text-Parser-Deterministic.html#t:DeterministicParsing),

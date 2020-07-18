@@ -9,7 +9,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 #endif
 
--- | Parsers that can return a prefix of their input.
+-- | Parsers that can consume and return a prefix of their input.
 
 module Text.Parser.Input (InputParsing(..), InputCharParsing(..), ConsumedInputParsing(..),
                           Lazy(..), Strict(..), Position) where
@@ -77,23 +77,26 @@ import Prelude hiding (take, takeWhile)
 
 -- | Methods for parsing monoidal inputs
 class LookAheadParsing m => InputParsing m where
+   -- | The type of the input stream that the parser @m@ expects to parse.
    type ParserInput m
-   -- | Always sucessful parser that returns the remaining input without consuming it.
+   -- | Always sucessful parser that returns the entire remaining input without consuming it.
    getInput :: m (ParserInput m)
-   -- | Retrieve the 'Position' the parser has reached in the input source.
+   -- | Retrieve the 'Position' reached by the parser in the input source.
    getSourcePos :: m Position
 
    -- | A parser that accepts any single atomic prefix of the input stream.
+   --
    -- > anyToken == satisfy (const True)
    -- > anyToken == take 1
    anyToken :: m (ParserInput m)
    -- | A parser that accepts exactly the given number of input atoms.
+   --
    -- > take n == count n anyToken
    take :: Int -> m (ParserInput m)
    -- | A parser that accepts an input atom only if it satisfies the given predicate.
    satisfy :: (ParserInput m -> Bool) -> m (ParserInput m)
    -- | A parser that succeeds exactly when satisfy doesn't, equivalent to
-   -- 'Text.Parser.Combinators.notFollowedBy' @. satisfy@
+   -- 'Text.Parser.Combinators.notFollowedBy' @.@ 'satisfy'
    notSatisfy :: (ParserInput m -> Bool) -> m ()
 
    -- | A stateful scanner. The predicate modifies a state argument, and each transformed state is passed to successive
@@ -109,13 +112,13 @@ class LookAheadParsing m => InputParsing m where
    string :: ParserInput m -> m (ParserInput m)
 
    -- | A parser accepting the longest sequence of input atoms that match the given predicate; an optimized version of
-   -- 'concat' . 'many' . 'satisfy'.
+   -- 'concat' @.@ 'Control.Applicative.many' @.@ 'satisfy'.
    --
    -- /Note/: Because this parser does not fail, do not use it with combinators such as 'Control.Applicative.many',
    -- because such parsers loop until a failure occurs.  Careless use will thus result in an infinite loop.
    takeWhile :: (ParserInput m -> Bool) -> m (ParserInput m)
    -- | A parser accepting the longest non-empty sequence of input atoms that match the given predicate; an optimized
-   -- version of 'concatSome . satisfy'.
+   -- version of 'concat' @.@ 'Control.Applicative.some' @.@ 'satisfy'.
    takeWhile1 :: (ParserInput m -> Bool) -> m (ParserInput m)
 
    default getSourcePos :: (FactorialMonoid (ParserInput m), Functor m) => m Position
