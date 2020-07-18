@@ -2,6 +2,7 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
 
 #if defined (__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ < 802
@@ -55,6 +56,11 @@ import qualified Data.Text as Text
 import qualified Data.Attoparsec.ByteString as Attoparsec
 import qualified Data.Attoparsec.ByteString.Char8 as Attoparsec.Char8
 import qualified Data.Attoparsec.Text as Attoparsec.Text
+#endif
+
+#ifdef MIN_VERSION_parsec
+import Text.Parsec (ParsecT)
+import qualified Text.Parsec as Parsec
 #endif
 
 #ifdef MIN_VERSION_binary
@@ -417,6 +423,23 @@ instance InputCharParsing Attoparsec.Text.Parser where
 
 instance ConsumedInputParsing Attoparsec.Text.Parser where
    match = Attoparsec.Text.match
+#endif
+
+#ifdef MIN_VERSION_parsec
+instance (FactorialMonoid s, LeftReductive s, Show s, Parsec.Stream s m t, Show t) => InputParsing (ParsecT s u m) where
+   type ParserInput (ParsecT s u m) = s
+   getInput = Parsec.getInput
+   anyToken = do rest <- Parsec.getInput
+                 case Factorial.splitPrimePrefix rest
+                   of Just (x, rest') -> x <$ Parsec.setInput rest'
+                      Nothing -> Parsec.parserFail "anyToken"
+   take n = do rest <- Parsec.getInput
+               case Factorial.splitAt n rest
+                 of (prefix, suffix) | Factorial.length prefix == n -> prefix <$ Parsec.setInput suffix
+                    _ -> Parsec.parserFail ("take " ++ show n)
+
+instance (TextualMonoid s, Show s, Parsec.Stream s m Char) => InputCharParsing (ParsecT s u m) where
+   satisfyCharInput = fmap Textual.singleton . Parsec.satisfy
 #endif
 
 #ifdef MIN_VERSION_binary
