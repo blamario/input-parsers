@@ -1,6 +1,6 @@
 cabal-version:       >=1.10
 name:                input-parsers
-version:             0.1
+version:             0.1.0.1
 synopsis:            Extension of the parsers library with more capability and efficiency
 description:
                      Extended version of the parsers library, with the additional classes providing more
@@ -36,7 +36,7 @@ library
                        Text.Parser.Input.Position,
                        Text.Parser.Wrapper
   other-modules:       Text.Parser.Internal
-  build-depends:       base >=4.9 && <4.14, bytestring >=0.10 && <0.11, text >=1.2 && <1.3,
+  build-depends:       base >=4.9 && <5, bytestring >=0.10 && <0.11, text >=1.2 && <1.3,
                        monoid-subclasses >= 1.0 && < 1.1, parsers >= 0.12 && < 0.13,
                        transformers >=0.2 && <0.6
   if flag(binary)
