@@ -7,37 +7,44 @@ module Text.Parser.Input.Position (Position, fromStart, fromEnd,
 
 import Data.Char (isSpace)
 import Data.String (IsString(fromString))
+import Data.Monoid (Dual(Dual))
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
 import Data.Monoid.Factorial (FactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid)
 
--- | Opaque data type that represents an input position.
-data Position = PositionFromStart !Int
-                -- ^ the length of the input from the start to the position
-              | PositionFromEnd Int
-                -- ^ the length of the input from the position to end
-              deriving (Eq, Read, Show)
+-- | A class for representing position values.
+--
+-- > move (distance pos1 pos2) pos1 == pos2
+class Position p where
+   -- | Distance from the first position to the second
+   distance :: p -> p -> Int
+   -- | Move the position by the given distance.
+   move :: Int -> p -> p
+   -- | Map the position into its offset from the beginning of the full input.
+   offset :: FactorialMonoid s => s -> p -> Int
+
+instance Position Int where
+   distance = flip (-)
+   move = (+)
+   offset = const id
+
+instance Position a => Position (Dual a) where
+   distance (Dual p1) (Dual p2) = distance p2 p1
+   move distance (Dual p) = Dual (move (negate distance) p)
+   offset wholeInput (Dual p) = Factorial.length wholeInput - offset wholeInput p
 
 -- | Construct a 'Position' given the offset from the beginning of the full input.
-fromStart :: Int -> Position
-fromStart = PositionFromStart
+fromStart :: Int -> Int
+fromStart = id
 
 -- | Construct a 'Position' given the length remaining from the position to the end of the input.
-fromEnd :: Int -> Position
-fromEnd = PositionFromEnd
-
--- | Map the position into its offset from the beginning of the full input.
---
--- > offset input . fromStart === id
-offset :: FactorialMonoid s => s -> Position -> Int
-offset wholeInput (PositionFromStart offset) = offset
-offset wholeInput (PositionFromEnd remainderLength) = Factorial.length wholeInput - remainderLength
-{-# INLINE offset #-}
+fromEnd :: Int -> Dual Int
+fromEnd = Dual
 
 -- | Given the parser input, a 'Position' within it, and desired number of context lines, returns a description of
 -- the offset position in English.
-context :: (Eq s, TextualMonoid s) => s -> Position -> Int -> s
+context :: (Eq s, TextualMonoid s, Position p) => s -> p -> Int -> s
 context input pos contextLineCount = 
    foldMap (<> "\n") prevLines <> lastLinePadding
    <> "at line " <> fromString (show $ length allPrevLines) <> ", column " <> fromString (show $ column+1) <> "\n"
@@ -50,7 +57,7 @@ context input pos contextLineCount =
 
 -- | Given the full input and an offset within it, returns all the input lines up to and including the offset
 -- in reverse order, as well as the zero-based column number of the offset
-lineAndColumn :: (Eq s, IsString s, FactorialMonoid s) => s -> Position -> ([s], Int)
+lineAndColumn :: (Eq s, IsString s, FactorialMonoid s, Position p) => s -> p -> ([s], Int)
 lineAndColumn input pos = context [] (offset input pos) (Factorial.split (== "\n") input)
   where context revLines restCount []
           | restCount > 0 = (["Error: the offset is beyond the input length"], -1)

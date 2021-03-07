@@ -12,7 +12,7 @@
 -- | Parsers that can consume and return a prefix of their input.
 
 module Text.Parser.Input (InputParsing(..), InputCharParsing(..), ConsumedInputParsing(..),
-                          Lazy(..), Strict(..), Position) where
+                          Lazy(..), Strict(..)) where
 
 import Control.Applicative (Applicative ((<*>), pure), Alternative ((<|>), empty), (<**>))
 import Control.Monad (MonadPlus, void)
@@ -27,7 +27,7 @@ import qualified Control.Monad.Trans.RWS.Lazy as Lazy (RWST(RWST))
 import qualified Control.Monad.Trans.RWS.Strict as Strict (RWST(RWST))
 import Data.Functor ((<$>))
 import qualified Data.List as List
-import Data.Monoid (Monoid, mappend, mempty)
+import Data.Monoid (Monoid, Dual, mappend, mempty)
 import Data.String (IsString (fromString))
 import Text.ParserCombinators.ReadP (ReadP)
 import qualified Text.ParserCombinators.ReadP as ReadP
@@ -79,10 +79,11 @@ import Prelude hiding (take, takeWhile)
 class LookAheadParsing m => InputParsing m where
    -- | The type of the input stream that the parser @m@ expects to parse.
    type ParserInput m
+   type ParserPosition m
    -- | Always sucessful parser that returns the entire remaining input without consuming it.
    getInput :: m (ParserInput m)
    -- | Retrieve the 'Position' reached by the parser in the input source.
-   getSourcePos :: m Position
+   getSourcePos :: m (ParserPosition m)
 
    -- | A parser that accepts any single atomic prefix of the input stream.
    --
@@ -121,7 +122,9 @@ class LookAheadParsing m => InputParsing m where
    -- version of 'concat' @.@ 'Control.Applicative.some' @.@ 'satisfy'.
    takeWhile1 :: (ParserInput m -> Bool) -> m (ParserInput m)
 
-   default getSourcePos :: (FactorialMonoid (ParserInput m), Functor m) => m Position
+   type ParserPosition m = Dual Int
+   default getSourcePos :: (FactorialMonoid (ParserInput m), Functor m, ParserPosition m ~ Dual Int)
+                        => m (ParserPosition m)
    getSourcePos = fromEnd . Factorial.length <$> getInput
    anyToken = take 1
    default satisfy :: Monad m => (ParserInput m -> Bool) -> m (ParserInput m)
@@ -202,6 +205,7 @@ instance ConsumedInputParsing ReadP where
 
 instance (Monad m, InputParsing m) => InputParsing (IdentityT m) where
    type ParserInput (IdentityT m) = ParserInput m
+   type ParserPosition (IdentityT m) = ParserPosition m
    getInput = IdentityT getInput
    getSourcePos = IdentityT getSourcePos
    anyToken = IdentityT anyToken
@@ -225,6 +229,7 @@ instance (Monad m, ConsumedInputParsing m) => ConsumedInputParsing (IdentityT m)
 
 instance (MonadPlus m, InputParsing m) => InputParsing (ReaderT e m) where
    type ParserInput (ReaderT e m) = ParserInput m
+   type ParserPosition (ReaderT e m) = ParserPosition m
    getInput = lift getInput
    getSourcePos = lift getSourcePos
    anyToken = lift anyToken
@@ -248,6 +253,7 @@ instance (MonadPlus m, ConsumedInputParsing m) => ConsumedInputParsing (ReaderT 
 
 instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Lazy.WriterT w m) where
    type ParserInput (Lazy.WriterT w m) = ParserInput m
+   type ParserPosition (Lazy.WriterT w m) = ParserPosition m
    getInput = lift getInput
    getSourcePos = lift getSourcePos
    anyToken = lift anyToken
@@ -271,6 +277,7 @@ instance (MonadPlus m, ConsumedInputParsing m, Monoid w) => ConsumedInputParsing
 
 instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Strict.WriterT w m) where
    type ParserInput (Strict.WriterT w m) = ParserInput m
+   type ParserPosition (Strict.WriterT w m) = ParserPosition m
    getInput = lift getInput
    getSourcePos = lift getSourcePos
    anyToken = lift anyToken
@@ -294,6 +301,7 @@ instance (MonadPlus m, ConsumedInputParsing m, Monoid w) => ConsumedInputParsing
 
 instance (MonadPlus m, InputParsing m) => InputParsing (Lazy.StateT s m) where
    type ParserInput (Lazy.StateT s m) = ParserInput m
+   type ParserPosition (Lazy.StateT s m) = ParserPosition m
    getInput = lift getInput
    getSourcePos = lift getSourcePos
    anyToken = lift anyToken
@@ -317,6 +325,7 @@ instance (MonadPlus m, ConsumedInputParsing m) => ConsumedInputParsing (Lazy.Sta
 
 instance (MonadPlus m, InputParsing m) => InputParsing (Strict.StateT s m) where
    type ParserInput (Strict.StateT s m) = ParserInput m
+   type ParserPosition (Strict.StateT s m) = ParserPosition m
    getInput = lift getInput
    getSourcePos = lift getSourcePos
    anyToken = lift anyToken
@@ -340,6 +349,7 @@ instance (MonadPlus m, ConsumedInputParsing m) => ConsumedInputParsing (Strict.S
 
 instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Lazy.RWST r w s m) where
    type ParserInput (Lazy.RWST r w s m) = ParserInput m
+   type ParserPosition (Lazy.RWST r w s m) = ParserPosition m
    getInput = lift getInput
    getSourcePos = lift getSourcePos
    anyToken = lift anyToken
@@ -363,6 +373,7 @@ instance (MonadPlus m, ConsumedInputParsing m, Monoid w) => ConsumedInputParsing
 
 instance (MonadPlus m, InputParsing m, Monoid w) => InputParsing (Strict.RWST r w s m) where
    type ParserInput (Strict.RWST r w s m) = ParserInput m
+   type ParserPosition (Strict.RWST r w s m) = ParserPosition m
    getInput = lift getInput
    getSourcePos = lift getSourcePos
    anyToken = lift anyToken
@@ -448,6 +459,7 @@ instance (TextualMonoid s, Show s, Parsec.Stream s m Char) => InputCharParsing (
 #ifdef MIN_VERSION_binary
 instance InputParsing (Lazy Binary.Get) where
    type ParserInput (Lazy Binary.Get) = Lazy.ByteString
+   type ParserPosition (Lazy Binary.Get) = Int
    getInput = Lazy (Binary.lookAhead Binary.getRemainingLazyByteString)
    getSourcePos = Lazy (fromStart . fromIntegral <$> Binary.bytesRead)
    anyToken = Lazy (Binary.getLazyByteString 1)
@@ -455,6 +467,7 @@ instance InputParsing (Lazy Binary.Get) where
 
 instance InputParsing (Strict Binary.Get) where
    type ParserInput (Strict Binary.Get) = ByteString
+   type ParserPosition (Strict Binary.Get) = Int
    getInput = Strict (Lazy.toStrict <$> Binary.lookAhead Binary.getRemainingLazyByteString)
    getSourcePos = Strict (fromStart . fromIntegral <$> Binary.bytesRead)
    anyToken = Strict (Binary.getByteString 1)
