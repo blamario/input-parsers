@@ -7,16 +7,17 @@ module Text.Parser.Input.Position (Position, fromStart, fromEnd,
 
 import Data.Char (isSpace)
 import Data.String (IsString(fromString))
-import Data.Monoid (Dual(Dual))
+import Data.Ord (Down(Down))
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
 import Data.Monoid.Factorial (FactorialMonoid)
 import Data.Monoid.Textual (TextualMonoid)
 
--- | A class for representing position values.
+-- | A class for representing position values. The methods satisfy these laws:
 --
 -- > move (distance pos1 pos2) pos1 == pos2
-class Position p where
+-- > (pos1 < pos2) == (distance pos1 pos2 > 0)
+class Ord p => Position p where
    -- | Distance from the first position to the second
    distance :: p -> p -> Int
    -- | Move the position by the given distance.
@@ -29,18 +30,18 @@ instance Position Int where
    move = (+)
    offset = const id
 
-instance Position a => Position (Dual a) where
-   distance (Dual p1) (Dual p2) = distance p2 p1
-   move distance (Dual p) = Dual (move (negate distance) p)
-   offset wholeInput (Dual p) = Factorial.length wholeInput - offset wholeInput p
+instance Position a => Position (Down a) where
+   distance (Down p1) (Down p2) = distance p2 p1
+   move distance (Down p) = Down (move (negate distance) p)
+   offset wholeInput (Down p) = Factorial.length wholeInput - offset wholeInput p
 
 -- | Construct a 'Position' given the offset from the beginning of the full input.
 fromStart :: Int -> Int
 fromStart = id
 
 -- | Construct a 'Position' given the length remaining from the position to the end of the input.
-fromEnd :: Int -> Dual Int
-fromEnd = Dual
+fromEnd :: Int -> Down Int
+fromEnd = Down
 
 -- | Given the parser input, a 'Position' within it, and desired number of context lines, returns a description of
 -- the offset position in English.

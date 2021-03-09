@@ -1,6 +1,6 @@
 cabal-version:       >=1.10
 name:                input-parsers
-version:             0.2
+version:             0.2.1
 synopsis:            Extension of the parsers library with more capability and efficiency
 description:
                      Extended version of the parsers library, with the additional classes providing more

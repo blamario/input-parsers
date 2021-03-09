@@ -27,7 +27,8 @@ import qualified Control.Monad.Trans.RWS.Lazy as Lazy (RWST(RWST))
 import qualified Control.Monad.Trans.RWS.Strict as Strict (RWST(RWST))
 import Data.Functor ((<$>))
 import qualified Data.List as List
-import Data.Monoid (Monoid, Dual, mappend, mempty)
+import Data.Ord (Down)
+import Data.Monoid (Monoid, mappend, mempty)
 import Data.String (IsString (fromString))
 import Text.ParserCombinators.ReadP (ReadP)
 import qualified Text.ParserCombinators.ReadP as ReadP
@@ -122,8 +123,8 @@ class LookAheadParsing m => InputParsing m where
    -- version of 'concat' @.@ 'Control.Applicative.some' @.@ 'satisfy'.
    takeWhile1 :: (ParserInput m -> Bool) -> m (ParserInput m)
 
-   type ParserPosition m = Dual Int
-   default getSourcePos :: (FactorialMonoid (ParserInput m), Functor m, ParserPosition m ~ Dual Int)
+   type ParserPosition m = Down Int
+   default getSourcePos :: (FactorialMonoid (ParserInput m), Functor m, ParserPosition m ~ Down Int)
                         => m (ParserPosition m)
    getSourcePos = fromEnd . Factorial.length <$> getInput
    anyToken = take 1
