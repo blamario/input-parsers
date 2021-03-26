@@ -25,6 +25,9 @@ import qualified Control.Monad.Trans.State.Lazy as Lazy (StateT(StateT))
 import qualified Control.Monad.Trans.State.Strict as Strict (StateT(StateT))
 import qualified Control.Monad.Trans.RWS.Lazy as Lazy (RWST(RWST))
 import qualified Control.Monad.Trans.RWS.Strict as Strict (RWST(RWST))
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Lazy as Lazy
 import Data.Functor ((<$>))
 import qualified Data.List as List
 import Data.Ord (Down)
@@ -47,11 +50,8 @@ import Data.Monoid.Textual (TextualMonoid)
 import Data.Semigroup.Cancellative (LeftReductive)
 
 #ifdef MIN_VERSION_attoparsec
-import Data.ByteString (ByteString)
 import Data.Text (Text)
-import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Char8 as ByteString.Char8
-import qualified Data.ByteString.Lazy as Lazy
 import qualified Data.Text as Text
 
 import qualified Data.Attoparsec.ByteString as Attoparsec
