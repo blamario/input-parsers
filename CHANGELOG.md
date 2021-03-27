@@ -1,5 +1,10 @@
 # Revision history for input-parsers
 
+## 0.2.2 -- 2021-03-26
+
+* Move Data.ByteString and Data.ByteString.Lazy imports outside ifdef (by Gary Coady)
+* Exported all Position methods
+
 ## 0.2.1 -- 2021-03-09
 
 * Changed the default instance of `ParserPosition`, made `Position` a subclass of `Ord`.

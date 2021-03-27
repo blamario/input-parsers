@@ -2,8 +2,7 @@
 
 -- | A parser's position in the input.
 
-module Text.Parser.Input.Position (Position, fromStart, fromEnd,
-                                   offset, context, lineAndColumn) where
+module Text.Parser.Input.Position (Position(..), fromStart, fromEnd, context, lineAndColumn) where
 
 import Data.Char (isSpace)
 import Data.String (IsString(fromString))
