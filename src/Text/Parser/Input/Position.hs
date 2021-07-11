@@ -6,6 +6,7 @@ module Text.Parser.Input.Position (Position(..), fromStart, fromEnd, context, li
 
 import Data.Char (isSpace)
 import Data.String (IsString(fromString))
+import Data.Monoid ((<>))
 import Data.Ord (Down(Down))
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual

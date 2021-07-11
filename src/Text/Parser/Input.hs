@@ -31,7 +31,7 @@ import qualified Data.ByteString.Lazy as Lazy
 import Data.Functor ((<$>))
 import qualified Data.List as List
 import Data.Ord (Down)
-import Data.Monoid (Monoid, mappend, mempty)
+import Data.Monoid (Monoid, (<>))
 import Data.String (IsString (fromString))
 import Text.ParserCombinators.ReadP (ReadP)
 import qualified Text.ParserCombinators.ReadP as ReadP
