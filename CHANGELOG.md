@@ -1,5 +1,10 @@
 # Revision history for input-parsers
 
+## 0.2.3 -- 2021-03-26
+
+* Improved documentation
+* Fixed compilation with GHC 8.2.2
+
 ## 0.2.2 -- 2021-03-26
 
 * Move Data.ByteString and Data.ByteString.Lazy imports outside ifdef (by Gary Coady)

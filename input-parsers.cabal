@@ -1,6 +1,6 @@
 cabal-version:       >=1.10
 name:                input-parsers
-version:             0.2.2
+version:             0.2.3
 synopsis:            Extension of the parsers library with more capability and efficiency
 description:
                      Extended version of the parsers library, with the additional classes providing more
@@ -13,6 +13,7 @@ maintainer:          blamario@protonmail.com
 copyright:           (c) 2020 Mario Blažević
 category:            Parsing
 build-type:          Simple
+tested-with:         ghc==9.0.1, GHC==8.10.4, GHC==8.8.4, GHC==8.6.5, GHC==8.4.4, GHC==8.2.2, GHC==8.0.2
 extra-source-files:  CHANGELOG.md, README.md
 
 flag binary
