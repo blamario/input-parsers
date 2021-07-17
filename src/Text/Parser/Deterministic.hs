@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
--- | Deterministic parsers can be restricted to a single parsing result.
+-- | Deterministic parsers can be restricted to succeed with a single parsing result.
 
 module Text.Parser.Deterministic where
 
@@ -62,7 +62,7 @@ class Parsing m => DeterministicParsing m where
    (<<|>) :: m a -> m a -> m a
    -- | Like 'optional', but never succeeds with @Nothing@ if the argument parser can succeed.
    takeOptional :: m a -> m (Maybe a)
-   -- | Like 'some', but always consuming the longest matching sequence of input.
+   -- | Like 'many', but always consuming the longest matching sequence of input.
    takeMany :: m a -> m [a]
    -- | Like 'some', but always consuming the longest matching sequence of input.
    takeSome :: m a -> m [a]

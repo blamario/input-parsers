@@ -23,3 +23,7 @@ The present package also exports the class
 which provides a number of parser methods that are guaranteed to succeed with a single (typically longest possible)
 result. This is most useful for writing the lexical layer of a parser, but it can help avoid ambiguities and
 inefficiencies in general.
+
+Finally, the package provides the class
+[`Position`](http://hackage.haskell.org/package/input-parsers/docs/Text-Parser-Input-Position.html#t:Position) to
+abstract over the position the parser reached in the input stream.
