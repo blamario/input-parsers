@@ -1,5 +1,9 @@
 # Revision history for input-parsers
 
+## 0.2.3.1 -- 2021-11-25
+
+* Incremented the upper bound of the optional `attoparsec` dependency.
+
 ## 0.2.3 -- 2021-03-26
 
 * Improved documentation
