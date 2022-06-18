@@ -34,6 +34,9 @@ instance Position a => Position (Down a) where
    distance (Down p1) (Down p2) = distance p2 p1
    move distance (Down p) = Down (move (negate distance) p)
    offset wholeInput (Down p) = Factorial.length wholeInput - offset wholeInput p
+   {-# INLINE distance #-}
+   {-# INLINE move #-}
+   {-# INLINE offset #-}
 
 -- | Construct a 'Position' given the offset from the beginning of the full input.
 fromStart :: Int -> Int
