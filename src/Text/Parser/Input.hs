@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 #if defined (__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ < 802
 {-# LANGUAGE TypeSynonymInstances #-}
