@@ -1,6 +1,6 @@
 module Text.Parser.Internal where
 
-import Control.Applicative (Applicative, liftA2)
+import Control.Applicative (liftA2)
 import qualified Control.Monad.Trans.Writer.Lazy as Lazy (WriterT(WriterT))
 import qualified Control.Monad.Trans.Writer.Strict as Strict (WriterT(WriterT))
 import qualified Control.Monad.Trans.State.Lazy as Lazy (StateT(StateT))
@@ -32,5 +32,8 @@ mapStrictRWST :: Applicative m => (m a -> m b) -> Strict.RWST r w s m a -> Stric
 mapStrictRWST f (Strict.RWST p) = Strict.RWST (\r-> apply . p r)
    where apply m = liftA2 replaceFstOf3 (f $ fstOf3 <$> m) m
 
-fstOf3 (a, b, c) = a
+fstOf3 :: (a, b, c) -> a
+fstOf3 (a, _, _) = a
+
+replaceFstOf3 :: a -> (x, b, c) -> (a, b, c)
 replaceFstOf3 a (_, b, c) = (a, b, c)

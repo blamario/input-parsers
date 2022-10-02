@@ -6,8 +6,7 @@
 
 module Text.Parser.Deterministic where
 
-import Control.Applicative (Applicative ((<*>), pure), Alternative ((<|>), many, some), liftA2, optional)
-import Control.Arrow (first)
+import Control.Applicative (Alternative ((<|>), many, some), liftA2, optional)
 import Control.Monad (MonadPlus, void)
 import Control.Monad.Trans.Identity (IdentityT(..))
 import Control.Monad.Trans.Reader (ReaderT(..), mapReaderT)
@@ -17,17 +16,10 @@ import qualified Control.Monad.Trans.State.Lazy as Lazy (StateT(StateT))
 import qualified Control.Monad.Trans.State.Strict as Strict (StateT(StateT))
 import qualified Control.Monad.Trans.RWS.Lazy as Lazy (RWST(RWST))
 import qualified Control.Monad.Trans.RWS.Strict as Strict (RWST(RWST))
-import Data.Functor ((<$>))
-import qualified Data.List as List
-import Data.Monoid (Monoid, mappend, mempty)
-import Data.String (IsString (fromString))
 import Text.ParserCombinators.ReadP (ReadP)
 import qualified Text.ParserCombinators.ReadP as ReadP
 
-import Text.Parser.Char (CharParsing)
-import Text.Parser.Combinators (Parsing, count, eof, notFollowedBy, try, unexpected)
-import Text.Parser.LookAhead (LookAheadParsing, lookAhead)
-import qualified Text.Parser.Char as Char
+import Text.Parser.Combinators (Parsing, notFollowedBy, try)
 
 import Text.Parser.Internal (mapLazyWriterT, mapStrictWriterT,
                              mapLazyStateT, mapStrictStateT,
@@ -35,22 +27,11 @@ import Text.Parser.Internal (mapLazyWriterT, mapStrictWriterT,
 import Text.Parser.Wrapper (Lazy(..), Strict(..))
 
 #ifdef MIN_VERSION_attoparsec
-import Data.ByteString (ByteString)
-import Data.Text (Text)
-import qualified Data.ByteString as ByteString
-import qualified Data.ByteString.Char8 as ByteString.Char8
-import qualified Data.Text as Text
-
 import qualified Data.Attoparsec.ByteString as Attoparsec
-import qualified Data.Attoparsec.ByteString.Char8 as Attoparsec.Char8
 import qualified Data.Attoparsec.Text as Attoparsec.Text
 #endif
 
 #ifdef MIN_VERSION_binary
-import Data.ByteString (ByteString)
-import qualified Data.ByteString as ByteString
-import qualified Data.ByteString.Lazy as Lazy
-
 import qualified Data.Binary.Get as Binary
 #endif
 

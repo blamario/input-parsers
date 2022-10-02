@@ -4,7 +4,7 @@
 
 module Text.Parser.Wrapper where
 
-import Control.Applicative (Applicative, Alternative)
+import Control.Applicative (Alternative)
 import Control.Monad (MonadPlus)
 import Text.Parser.Combinators (Parsing)
 import Text.Parser.LookAhead (LookAheadParsing)

@@ -15,30 +15,26 @@
 module Text.Parser.Input (InputParsing(..), InputCharParsing(..), ConsumedInputParsing(..),
                           Lazy(..), Strict(..)) where
 
-import Control.Applicative (Applicative ((<*>), pure), Alternative ((<|>), empty), (<**>))
+import Control.Applicative (Alternative ((<|>), empty))
 import Control.Monad (MonadPlus, void)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Identity (IdentityT(..))
 import Control.Monad.Trans.Reader (ReaderT(..), mapReaderT)
-import qualified Control.Monad.Trans.Writer.Lazy as Lazy (WriterT(WriterT))
-import qualified Control.Monad.Trans.Writer.Strict as Strict (WriterT(WriterT))
-import qualified Control.Monad.Trans.State.Lazy as Lazy (StateT(StateT))
-import qualified Control.Monad.Trans.State.Strict as Strict (StateT(StateT))
-import qualified Control.Monad.Trans.RWS.Lazy as Lazy (RWST(RWST))
-import qualified Control.Monad.Trans.RWS.Strict as Strict (RWST(RWST))
+import qualified Control.Monad.Trans.Writer.Lazy as Lazy (WriterT)
+import qualified Control.Monad.Trans.Writer.Strict as Strict (WriterT)
+import qualified Control.Monad.Trans.State.Lazy as Lazy (StateT)
+import qualified Control.Monad.Trans.State.Strict as Strict (StateT)
+import qualified Control.Monad.Trans.RWS.Lazy as Lazy (RWST)
+import qualified Control.Monad.Trans.RWS.Strict as Strict (RWST)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as Lazy
-import Data.Functor ((<$>))
-import qualified Data.List as List
 import Data.Ord (Down)
-import Data.Monoid (Monoid, (<>))
-import Data.String (IsString (fromString))
 import Text.ParserCombinators.ReadP (ReadP)
 import qualified Text.ParserCombinators.ReadP as ReadP
 
 import Text.Parser.Char (CharParsing)
-import Text.Parser.Combinators (Parsing, count, eof, notFollowedBy, try, unexpected)
+import Text.Parser.Combinators (count, eof, notFollowedBy, try, unexpected)
 import Text.Parser.LookAhead (LookAheadParsing, lookAhead)
 import qualified Text.Parser.Char as Char
 
@@ -69,7 +65,7 @@ import qualified Text.Parsec as Parsec
 import qualified Data.Binary.Get as Binary
 #endif
 
-import Text.Parser.Input.Position (Position, fromEnd, fromStart)
+import Text.Parser.Input.Position (fromEnd, fromStart)
 import Text.Parser.Internal (mapLazyWriterT, mapStrictWriterT,
                              mapLazyStateT, mapStrictStateT,
                              mapLazyRWST, mapStrictRWST)

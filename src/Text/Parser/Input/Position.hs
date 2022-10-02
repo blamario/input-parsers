@@ -6,7 +6,6 @@ module Text.Parser.Input.Position (Position(..), fromStart, fromEnd, context, li
 
 import Data.Char (isSpace)
 import Data.String (IsString(fromString))
-import Data.Monoid ((<>))
 import Data.Ord (Down(Down))
 import qualified Data.Monoid.Factorial as Factorial
 import qualified Data.Monoid.Textual as Textual
@@ -32,7 +31,7 @@ instance Position Int where
 
 instance Position a => Position (Down a) where
    distance (Down p1) (Down p2) = distance p2 p1
-   move distance (Down p) = Down (move (negate distance) p)
+   move dist (Down p) = Down (move (negate dist) p)
    offset wholeInput (Down p) = Factorial.length wholeInput - offset wholeInput p
    {-# INLINE distance #-}
    {-# INLINE move #-}
@@ -62,12 +61,12 @@ context input pos contextLineCount =
 -- | Given the full input and an offset within it, returns all the input lines up to and including the offset
 -- in reverse order, as well as the zero-based column number of the offset
 lineAndColumn :: (Eq s, IsString s, FactorialMonoid s, Position p) => s -> p -> ([s], Int)
-lineAndColumn input pos = context [] (offset input pos) (Factorial.split (== "\n") input)
-  where context revLines restCount []
+lineAndColumn input pos = go [] (offset input pos) (Factorial.split (== "\n") input)
+  where go revLines restCount []
           | restCount > 0 = (["Error: the offset is beyond the input length"], -1)
           | otherwise = (revLines, restCount)
-        context revLines restCount (next:rest)
+        go revLines restCount (next:rest)
           | restCount' < 0 = (next:revLines, restCount)
-          | otherwise = context (next:revLines) restCount' rest
+          | otherwise = go (next:revLines) restCount' rest
           where nextLength = Factorial.length next
                 restCount' = restCount - nextLength - 1
