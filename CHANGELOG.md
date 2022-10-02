@@ -1,5 +1,11 @@
 # Revision history for input-parsers
 
+## 0.3 -- 2022-10-02
+
+* Dropped support for GHC < 8.4
+* Incremented the upper bound of the `monoid-subclasses` dependency.
+* Added `-Wall` and fixed all warnings.
+
 ## 0.2.3.2 -- 2022-03-25
 
 * Incremented the upper bound of the `text` dependency.
