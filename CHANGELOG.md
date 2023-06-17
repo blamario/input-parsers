@@ -1,5 +1,9 @@
 # Revision history for input-parsers
 
+## 0.3.0.1 -- 2023-06-17
+
+* Incremented the upper bound of the `transformers` dependency.
+
 ## 0.3 -- 2022-10-02
 
 * Dropped support for GHC < 8.4
