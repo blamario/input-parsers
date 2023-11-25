@@ -1,5 +1,9 @@
 # Revision history for input-parsers
 
+## 0.3.0.2 -- 2023-11-25
+
+* Incremented the upper bound of the `bytestring` and `text` dependencies.
+
 ## 0.3.0.1 -- 2023-06-17
 
 * Incremented the upper bound of the `transformers` dependency.
